@@ -19,7 +19,6 @@
 // clang-format off
 
 #include QMK_KEYBOARD_H
-#include "oled.c"
 
 // Default keymap. This can be changed in Vial. Use oled.c to change beavior that Vial cannot change.
 
