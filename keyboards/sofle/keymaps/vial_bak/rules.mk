@@ -7,6 +7,4 @@ LTO_ENABLE = yes
 OLED_ENABLE = no
 VIA_ENBALE = yes
 VIAL_ENABLE = yes
-PS2_MOUSE_ENABLE = yes
-POINTING_DEVICE_DRIVER = azoteq_iqs5xx
-SRC += custom_pointer_driver.c
+

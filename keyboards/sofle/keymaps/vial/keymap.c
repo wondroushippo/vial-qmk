@@ -19,6 +19,8 @@
 
 #include QMK_KEYBOARD_H
 
+#define MASTER_RIGHT
+
 #define INDICATOR_BRIGHTNESS 30
 
 #define HSV_OVERRIDE_HELP(h, s, v, Override) h, s , Override
@@ -557,3 +559,31 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
 }
 
 #endif
+
+// Tweak these to taste – larger divisors = slower scroll
+#define SCROLL_DIVISOR_H  12.0
+#define SCROLL_DIVISOR_V  12.0
+
+// Accumulators to preserve fractional scroll
+static float scroll_accum_h = 0;
+static float scroll_accum_v = 0;
+
+report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
+    // Only adjust the scroll axes; leave cursor movement untouched
+    scroll_accum_h += (float)mouse_report.x / SCROLL_DIVISOR_H;
+    scroll_accum_v += (float)mouse_report.y / SCROLL_DIVISOR_V;
+
+    // Apply the integer part back into the report
+    mouse_report.h = (int8_t)scroll_accum_h;
+    mouse_report.v = (int8_t)scroll_accum_v;
+
+    // Remove the integer part so we carry forward the remainder
+    scroll_accum_h -= mouse_report.h;
+    scroll_accum_v -= mouse_report.v;
+
+    // Zero out cursor movement if you only want scroll – omit if you still want pointer
+    mouse_report.x = 0;
+    mouse_report.y = 0;
+
+    return mouse_report;
+}

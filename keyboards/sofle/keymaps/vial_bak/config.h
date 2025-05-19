@@ -25,12 +25,6 @@
 
 #define DYNAMIC_KEYMAP_LAYER_COUNT 16
 
-#define PS2_CLOCK_PIN B1
-#define PS2_DATA_PIN  B2
-//#define SPLIT_KEYBOARD
-#define EE_HANDS  // or define SPLIT_HAND_PIN
-#define AZOTEQ_IQS5XX_TPS43
-
 //#define USE_MATRIX_I2C
 
 /* Select hand configuration */
