@@ -1,5 +1,4 @@
-
- /* Copyright 2021 Dane Evans
+/* Copyright 2021 Dane Evans
   *
   * This program is free software: you can redistribute it and/or modify
   * it under the terms of the GNU General Public License as published by
@@ -62,6 +61,27 @@
 		{25, 2, hsv}, \
 	  {35+ 25, 2, hsv}
 
+#include "pointing_device.h"
+#include "ps2_mouse.h"
+#include "azoteq_iqs5xx.h"
+#include "split_util.h"
+
+#include "pointing_device.h"
+#include "split_util.h"
+
+report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
+#if defined(SPLIT_KEYBOARD)
+    if (is_keyboard_left()) {
+        // Convert motion into scroll only
+        mouse_report.h = mouse_report.x;
+        mouse_report.v = -mouse_report.y;
+        mouse_report.x = 0;
+        mouse_report.y = 0;
+        mouse_report.buttons = 0;
+    }
+#endif
+    return mouse_report;
+}
 
 enum sofle_layers {
     _DEFAULTS = 0,
@@ -377,7 +397,6 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 	rgblight_set_layer_state(0, layer_state_cmp(state, _DEFAULTS) && layer_state_cmp(default_layer_state,_QWERTY));
 	rgblight_set_layer_state(7, layer_state_cmp(state, _DEFAULTS) && layer_state_cmp(default_layer_state,_COLEMAKDH));
 
-
 	rgblight_set_layer_state(1, layer_state_cmp(state, _LOWER));
 	rgblight_set_layer_state(2, layer_state_cmp(state, _RAISE));
 	rgblight_set_layer_state(3, layer_state_cmp(state, _ADJUST));
@@ -414,7 +433,6 @@ static void print_status_narrow(void) {
     oled_write_ln_P(PSTR(""), false);
 
 	//snprintf(layer_state_str, sizeof(layer_state_str), "Layer: Undef-%ld", layer_state)
-
 
     switch (get_highest_layer(default_layer_state)) {
         case _QWERTY:
@@ -517,83 +535,56 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 #ifdef ENCODER_ENABLE
-const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
-    [0]  = { { KC_TRNS, KC_TRNS } },
-    [1]  = { { KC_TRNS, KC_TRNS } },
-    [2]  = { { KC_TRNS, KC_TRNS } },
-    [3]  = { { KC_TRNS, KC_TRNS } },
-    [4]  = { { KC_TRNS, KC_TRNS } },
-    [5]  = { { KC_TRNS, KC_TRNS } },
-    [6]  = { { KC_TRNS, KC_TRNS } },
-    [7]  = { { KC_TRNS, KC_TRNS } },
-};
+
+bool encoder_update_user(uint8_t index, bool clockwise) {
+    if (index == 0) {
+        if (clockwise) {
+            tap_code(KC_VOLU);
+        } else {
+            tap_code(KC_VOLD);
+        }
+		} else if (index == 1) {
+			switch (get_highest_layer(layer_state)) {
+				case _COLEMAK:
+				case _QWERTY:
+				case _COLEMAKDH:
+					if (clockwise) {
+						tap_code(KC_PGDN);
+					} else {
+						tap_code(KC_PGUP);
+					}
+				break;
+			case _RAISE:
+			case _LOWER:
+					if (clockwise) {
+						tap_code(KC_DOWN);
+					} else {
+						tap_code(KC_UP);
+					}
+				break;
+			default:
+					if (clockwise) {
+						tap_code(KC_WH_D);
+					} else {
+						tap_code(KC_WH_U);
+					}
+				break;
+		}
+    }
+    return true;
+}
+
 #endif
 
-const uint16_t PROGMEM combo1[] = { KC_A, KC_B, COMBO_END };
-const uint16_t PROGMEM combo2[] = { KC_C, KC_D, COMBO_END };
+#include "process_tap_dance.h"
+#include "process_combo.h"
 
-combo_t key_combos[] = {
-    COMBO(combo1, KC_ESC),
-    COMBO(combo2, KC_TAB)
-};
+// Declare the type manually to avoid missing header
 
-enum {
-    TD_ESC_SHIFT = 0,
-};
+#include "process_tap_dance.h"
+#include "process_combo.h"
 
-#include "tap_dance.h"
+// Declare the type manually since key_override.h is missing
+typedef struct key_override_t key_override_t;
 
-// Define tap dance keys (empty placeholder, index 0)
-enum {
-    TD_ESC_SHIFT,
-    // add more TD keys if needed
-};
-
-// Empty functions as placeholders (no custom behavior)
-void esc_shift_finished(tap_dance_state_t *state, void *user_data) { }
-void esc_shift_reset(tap_dance_state_t *state, void *user_data) { }
-
-// Tap dance actions array with minimal setup
-tap_dance_action_t tap_dance_actions[] = {
-    [TD_ESC_SHIFT] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, esc_shift_finished, esc_shift_reset),
-};
-
-//bool encoder_update_user(uint8_t index, bool clockwise) {
-//    if (index == 0) {
-//        if (clockwise) {
-//            tap_code(KC_VOLU);
-//        } else {
-//            tap_code(KC_VOLD);
-//        }
-//		} else if (index == 1) {
-//			switch (get_highest_layer(layer_state)) {
-//				case _COLEMAK:
-//				case _QWERTY:
-//				case _COLEMAKDH:
-//					if (clockwise) {
-//						tap_code(KC_PGDN);
-//					} else {
-//						tap_code(KC_PGUP);
-//					}
-//				break;
-//			case _RAISE:
-//			case _LOWER:
-//					if (clockwise) {
-//						tap_code(KC_DOWN);
-//					} else {
-//						tap_code(KC_UP);
-//					}
-//				break;
-//			default:
-//					if (clockwise) {
-//						tap_code(KC_WH_D);
-//					} else {
-//						tap_code(KC_WH_U);
-//					}
-//				break;
-//		}
-//    }
-//    return true;
-//}
-//
-//#endif
+// Required empty symbols for Vial introspection
